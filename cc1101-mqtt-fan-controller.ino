@@ -110,6 +110,9 @@ enum FanCodes {
 // On boot, publishes value of "online" to this topic
 #define STATUS_TOPIC BASE_TOPIC "/status"
 
+// CC1101 status
+#define CC1101_TOPIC BASE_TOPIC "/cc1101"
+
 // Command topic for the remote's main on/off button. OFF turns off the fan and light. ON turns on light and sets fan to max.
 #define MQTT_TOPIC_POWER_SET BASE_TOPIC "/power/set"
 
@@ -149,15 +152,18 @@ void setup() {
   delay(3000);
 
   InitWifi();
-  InitCC1101();
+
+  if (USE_TELNET_STREAM) {
+    StartTelnetDebugStream();
+  }
+
+  // Need to init MQTT before the cc1101 b/c we log transceiver status to MQTT
   InitMQTT();
+  
+  InitCC1101();
 
   if (OTA_ENABLED) {
     InitOTA();
-  }
-  
-  if (USE_TELNET_STREAM) {
-    StartTelnetDebugStream();
   }
 }
 
@@ -180,6 +186,11 @@ void loop() {
 
   if (mySwitch.available()) {
     HandleIncomingRfSignal();
+
+    // HACK: for some reason every button press on the remote was triggering this code to
+    // run 3 times, 76ms apart. Adding short delay to try to avoid that.
+    delay(250);
+
     mySwitch.resetAvailable();
   }
 }
@@ -188,7 +199,7 @@ void loop() {
 // InitWifi()
 // -------------------------------------------------------------------------------
 void InitWifi() {
-  Serial.print("Attempting to connect to WPA SSID: ");
+  Serial.print("\nAttempting to connect to WPA SSID: ");
   Serial.println(WIFI_SSID);
   
   WiFi.mode(WIFI_STA);
@@ -262,7 +273,7 @@ void InitWifi() {
 // InitOTA()
 // -------------------------------------------------------------------------------
 void InitOTA() {
-  Serial.println("Setting up OTA");
+  Serial.println("\nSetting up OTA");
   
   // Port defaults to 3232
   // ArduinoOTA.setPort(3232);
@@ -313,6 +324,7 @@ void InitOTA() {
 void InitMQTT() {
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(HandleMqttMessage);  
+  ReconnectMqtt();
 }
 
 // -------------------------------------------------------------------------------
@@ -322,10 +334,12 @@ void InitCC1101() {
   ELECHOUSE_cc1101.setSpiPin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
 
   if (ELECHOUSE_cc1101.getCC1101()) {       
-    LogPrintln("CC1101 connection OK");
+    LogPrintln("\nCC1101 connection OK");
+    mqttClient.publish(CC1101_TOPIC, "OK", true);
   }
   else{
-    LogPrintln("CC1101 connection error");
+    LogPrintln("\nCC1101 connection error");
+    mqttClient.publish(CC1101_TOPIC, "error", true);
   }  
 
   ELECHOUSE_cc1101.Init();  
@@ -343,7 +357,7 @@ void InitCC1101() {
 // StartTelnetDebugStream()
 // -------------------------------------------------------------------------------
 void StartTelnetDebugStream() {
-  Serial.println("Starting Telnet stream. Connect Telnet client to view output.");
+  Serial.println("\nStarting Telnet stream. Connect Telnet client to view output.");
   Serial.println("Send 'R' to reboot, 'C' to stop Telnet stream.");
   TelnetStream.begin();
 }
@@ -375,7 +389,7 @@ void HandleTelnetInput() {
 void ReconnectMqtt() {
   // Loop until we're reconnected
   while (!mqttClient.connected()) {
-    LogPrint("Attempting MQTT connection...");
+    LogPrint("\nAttempting MQTT connection...");
     
     // Attempt to connect
     if (mqttClient.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS, STATUS_TOPIC, 0, true, "offline")) {
@@ -407,7 +421,7 @@ void ReconnectMqtt() {
 // SendRfSignal()
 // -------------------------------------------------------------------------------
 void SendRfSignal(int value) {
-    LogPrint("Sending RF signal ");
+    LogPrint("\nSending RF signal ");
     LogPrint(value);
     LogPrint(" (");
     LogPrint(GetFanCodeDescription(value));
@@ -430,7 +444,7 @@ void SendRfSignal(int value) {
 // HandleIncomingRfSignal() - returns TRUE if the signal was recognized and handled
 // -------------------------------------------------------------------------------
 bool HandleIncomingRfSignal() {
-    LogPrint("Received RF signal ");
+    LogPrint("\nReceived RF signal ");
     LogPrint(mySwitch.getReceivedValue());
     LogPrint(" / ");
     LogPrint(mySwitch.getReceivedBitlength());
@@ -505,7 +519,7 @@ void ConvertRfSignalToMqttState(int rfCode) {
 // isn't working, then the local state is never updated)
 // -------------------------------------------------------------------------------
 void HandleMqttMessage(char* topic, byte* payload, unsigned int length) {
-  LogPrint("Received MQTT message [");
+  LogPrint("\nReceived MQTT message [");
   LogPrint(topic);
   LogPrint("]: ");
 
