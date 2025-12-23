@@ -1,0 +1,118 @@
+esphome:
+  name: "example.yaml"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    
+spi:
+  clk_pin: GPIO14
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+  interface: hardware
+      
+# Enable logging
+logger:
+  #level: VERY_VERBOSE
+  #level: VERBOSE
+  level: INFO
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "<redacted>"
+
+ota:
+  - platform: esphome
+    password: "<redacted>"
+
+web_server:
+  port: 80
+
+cc1101:
+  cs_pin: GPIO32
+  frequency: 303.87MHz
+  output_power: 11
+  
+
+remote_transmitter:
+  pin: GPIO26  # Must match GDO0
+  carrier_duty_percent: 100%
+  non_blocking: True
+  on_transmit:
+    then:
+      - cc1101.begin_tx
+  on_complete:
+    then:
+      - cc1101.begin_rx
+
+remote_receiver:
+  - pin: GPIO25  # GDO2
+    dump: all
+    tolerance: 50%
+    filter: 250us
+    idle: 4ms
+    buffer_size: 10kb
+    rmt_symbols: 96
+    on_rc_switch:
+      - logger.log:
+          format: "CC1101 Received: protocol=%d, code=0x%llX"
+          args: [x.protocol, x.code]
+button:
+  - platform: template
+    name: Master Fan Off
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '000111111101'
+          protocol: 6
+          repeat: 
+            times: 10
+            wait_time: 0s
+
+
+  - platform: template
+    name: Master Fan Low
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '000111110111'
+          protocol: 6
+          repeat: 
+            times: 10
+            wait_time: 0s
+              
+
+  - platform: template
+    name: Master Fan Med
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '000111101111'
+          protocol: 6
+          repeat: 
+            times: 10
+            wait_time: 0s
+             
+
+  - platform: template
+    name: Master Fan High
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: '000111011111'
+          protocol: 6
+          repeat: 
+            times: 10
+            wait_time: 0s  
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  manual_ip: 
+    static_ip: <redacted>
+    gateway: <redacted>
+    subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "<redacted>"
+    password: "<redacted>"
+
+captive_portal:
