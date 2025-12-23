@@ -1,4 +1,6 @@
-# cc1101-mqtt-fan-controller
+# cc1101-esp32-esphome-fan-controller
+
+I forked this from spetryjohnson but I wanted a non mqtt version that would work right from ESPHome in Home Assistant. I changed some of the README to make sense with my version of the project and I will eventually get it all setup but forgive me, I'm busy with my kids and they are my top priority.
 
 This project was created to automate a [Home Decorators Collection Beckford 52in ceiling fan](https://www.homedepot.com/p/Home-Decorators-Collection-Beckford-52-in-Indoor-Brushed-Nickel-Ceiling-Fan-with-Adjustable-White-Integrated-LED-with-Remote-Control-Included-YG630-BN/318749131) from Home Depot. 
 
@@ -9,19 +11,12 @@ I spent a bunch of time trying to figure out how to automate the 303MHz fan and 
 This project combines everything I learned from those resources into a single project, specifically for the CC1101 version that is readily available in March 2025.
 
 This project:
-  - Will help you capture RF commands from your remote
-  - Will convert RF commands --> MQTT state updates
-  - Will convert MQTT commands --> RF transmissions
-  - Will create a MQTT Fan element in Home Assistant
-  - Supports OTA code updates, so you can push changes after the device is in place
+  - Will help you capture RF commands from your remote using ESPHome Builder and then create buttons for it use inside Home Assistant.
+  
+
 
 ## Software dependencies
-
-Install these via the Arduino IDE library manager:
-
-  - [SmartRC-CC1101-Driver-Lib](https://github.com/LSatan/SmartRC-CC1101-Driver-Lib)
-  - [rc-switch](https://github.com/sui77/rc-switch)
-  - [PubSubClient](https://docs.arduino.cc/libraries/pubsubclient/)
+EspHome Builder in Home Assistant
 
 ## Materials
 
@@ -42,7 +37,7 @@ My fan uses this remote, which has the model number "TX028C-2" stamped on the ba
 
 ### ESP32
 
-Any ESP32 (or even an ESP8266) should work, but I'm using one of the [WROOM 32 dev boards from Amazon](https://www.amazon.com/dp/B09GK74F7N).
+Any ESP32 should work, but I'm using one of the [WROOM 32 dev boards from Amazon](https://www.amazon.com/dp/B09GK74F7N).
 
 
 ![Image of ESP32 board](/assets/ESP32.png)
@@ -64,54 +59,19 @@ If you don't know what frequency your fan uses you can try a web search search f
 
 ### Step 2 - Capture your RF codes
 
-Set the `RF_FREQUENCY` variable to your frequency and then install the sketch to your board. (The other values don't matter yet)
+Copy the yaml and update the frequency variable in the cc1101 part of the yaml.
 
-After the board connects to Wifi and the MQTT broker it will start listening for RF commands. Press buttons on your remote and you should see the captured commands in the Arduino IDE Serial Monitor.
+Install the new script and monitor the output. Hit the buttons of the fan and collect the codes.
 
 ![Screenshot of commands being captured](/assets/command-capture.png)
 
-### Step 3 - Update the sketch
+### Step 3 - Update the yaml
 
-Set the `RF_PROTOCOL`, `RF_BITLENGTH`, and `RF_DELAY` variables to match the values you captured. These will be the same for all commands.
+Set the 'code' and the 'protocol' for each of the fan modes in the YAML under the buttons and install it again
 
-Then update the `FanCodes` enum with the values you captured.
+### Step 4 - Use your buttons
 
-### Step 4 - Create the MQTT Fan element in Home Assistant
+Go to Settings -> Devices & Services -> ESPHome -> whatever_you_named_it
 
-```
-mqtt:
-  fan:
-    - name: "Guest Room Ceiling Fan Speed"
-      unique_id: "guest_room_ceiling_fan_mqtt"
-      
-      # On/Off state
-      state_topic: "home/rooms/guestroom/hampton-bay-fan/fan/state"
-      command_topic: "home/rooms/guestroom/hampton-bay-fan/fan/set"
-      
-      # Percentage (speed)
-      percentage_command_topic: "home/rooms/guestroom/hampton-bay-fan/speed/set"
-      percentage_state_topic: "home/rooms/guestroom/hampton-bay-fan/speed/state"
-      speed_range_min: 1
-      speed_range_max: 3
+Your buttons should be in the 'Controls' area and test out your new controls.
 
-      availability:
-        topic: "home/rooms/guestroom/hampton-bay-fan/status"
-        payload_available: "online"
-        payload_not_available: "offline"
-
-      optimistic: false
-      retain: true
-
-  switch:
-    - name: "Guest Room Ceiling Fan Light"
-      unique_id: "switch.guest_room_ceiling_fan_light"
-      device_class: "switch"
-      state_topic: "home/rooms/guestroom/hampton-bay-fan/light/state"
-      command_topic: "home/rooms/guestroom/hampton-bay-fan/light/set"
-      availability_topic: "home/rooms/guestroom/hampton-bay-fan/status"
-      payload_available: "online"
-      payload_not_available: "offline"
-      optimistic: false
-      retain: true
-```
-![Home Assistant fan control](/assets/ha-fan-control.png)
