@@ -30,7 +30,7 @@ The CC1101 is a common RF transceiver that supports multiple frequencies includi
 
 ### Ceiling fan w/ RF Remote
 
-My fan uses this remote, which has the model number "TX028C-2" stamped on the back.
+My fan uses this remote, which has the model number "UC7083T" stamped on the back.
 
 ![Image of fan remote with power button, speed control button, light button, and light temp button](/assets/remote.png)
 
