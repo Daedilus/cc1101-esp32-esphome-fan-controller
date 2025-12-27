@@ -1,6 +1,6 @@
 # cc1101-esp32-esphome-fan-controller
 
-I forked this from spetryjohnson but I wanted a non mqtt version that would work right from ESPHome in Home Assistant. I changed some of the README to make sense with my version of the project and I will eventually get it all setup but forgive me, I'm busy with my kids and they are my top priority.
+I forked this from [spetryjohnson](https://github.com/spetryjohnson/cc1101-mqtt-fan-controller/tree/main) but I wanted a non mqtt version that would work natively from ESPHome Builder in Home Assistant. 
 
 This project was created to automate a [Home Decorators Collection Beckford 52in ceiling fan](https://www.homedepot.com/p/Home-Decorators-Collection-Beckford-52-in-Indoor-Brushed-Nickel-Ceiling-Fan-with-Adjustable-White-Integrated-LED-with-Remote-Control-Included-YG630-BN/318749131) from Home Depot. 
 
