@@ -63,7 +63,7 @@ Copy the yaml and update the frequency variable in the cc1101 part of the yaml.
 
 Install the new script and monitor the output. Hit the buttons of the fan and collect the codes.
 
-![Screenshot of commands being captured](/assets/command-capture.png)
+![Screenshot of commands being captured](/assets/command-capture.PNG)
 
 ### Step 3 - Update the yaml
 
