@@ -16,7 +16,7 @@ This project:
 
 
 ## Software dependencies
-EspHome Builder in Home Assistant
+EspHome Builder v12.0+ in Home Assistant
 
 ## Materials
 
